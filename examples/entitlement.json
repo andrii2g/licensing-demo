@@ -1,0 +1,13 @@
+{
+  "license_id": "LIC-2026-001234",
+  "customer_id": "customer-42",
+  "product": "worker-suite",
+  "mode": "renewable",
+  "binding_policy": "linux-host-v1",
+  "expires_at": 1831680000,
+  "max_installations": 2,
+  "lease_seconds": 604800,
+  "max_logical_processors": null,
+  "features": ["messaging", "transcoding"]
+}
+

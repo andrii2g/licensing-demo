@@ -1,0 +1,10 @@
+# Template; use your real HTTPS endpoint and a root-owned file.
+schema_version = 1
+product = "worker-suite"
+server_url = "https://licenses.example.invalid"
+state_dir = "/var/lib/license-guard"
+connect_timeout_seconds = 5
+request_timeout_seconds = 20
+max_attempts = 3
+# No local lease/grace/mode overrides: those come from signed server policy.
+

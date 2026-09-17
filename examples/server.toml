@@ -1,0 +1,17 @@
+# Reference API configuration; TLS terminates at an administrator-managed proxy.
+schema_version = 1
+listen = "127.0.0.1:8080"
+database_path = "/var/lib/license-guard-server/licenses.db"
+issuer_key_path = "/etc/license-guard-server/issuer.key"
+issuer_key_id = "issuer-2026-01"
+challenge_ttl_seconds = 300
+operation_cache_seconds = 86400
+max_outstanding_challenges_per_installation = 10
+request_body_limit_bytes = 131072
+sqlite_busy_timeout_milliseconds = 5000
+# Exact rate limiter must be implemented and tested; these are defaults.
+requests_per_ip_per_minute = 60
+requests_per_installation_per_minute = 20
+# Trust proxy headers only from a configured local reverse proxy.
+trusted_proxy_addresses = ["127.0.0.1", "::1"]
+

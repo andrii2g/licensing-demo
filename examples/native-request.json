@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "license_path": "/var/lib/license-guard/license.lic",
+  "identity_path": "/var/lib/license-guard/installation.json",
+  "product": "worker-suite",
+  "required_features": [
+    "messaging"
+  ]
+}
