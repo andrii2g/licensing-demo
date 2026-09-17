@@ -1,0 +1,16 @@
+[package]
+name="license-host"
+version.workspace=true
+edition.workspace=true
+rust-version.workspace=true
+[features]
+dev=["license-core/dev"]
+[dependencies]
+license-core={path="../license-core"}
+hmac.workspace=true
+sha2.workspace=true
+hex.workspace=true
+rustix.workspace=true
+serde_json.workspace=true
+[dev-dependencies]
+tempfile.workspace=true
