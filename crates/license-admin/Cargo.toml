@@ -1,0 +1,16 @@
+[package]
+name="license-admin"
+version.workspace=true
+edition.workspace=true
+rust-version.workspace=true
+[features]
+dev=["license-server/dev","license-store/dev"]
+[dependencies]
+license-server={path="../license-server"}
+license-core={path="../license-core"}
+license-store={path="../license-store"}
+clap.workspace=true
+serde_json.workspace=true
+ed25519-dalek.workspace=true
+zeroize.workspace=true
+rusqlite.workspace=true
