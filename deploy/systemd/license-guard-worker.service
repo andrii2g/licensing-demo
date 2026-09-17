@@ -1,0 +1,35 @@
+[Unit]
+Description=License Guard Native AOT sample worker
+After=network.target
+StartLimitIntervalSec=60
+StartLimitBurst=3
+
+[Service]
+Type=simple
+User=productworker
+Group=productworker
+SupplementaryGroups=licenseguard
+WorkingDirectory=/opt/license-guard/worker
+ExecStart=/opt/license-guard/worker/NativeAotWorker
+Environment=LICENSE_NATIVE_PATH=/usr/lib/license-guard/liblicense_guard.so
+Environment=LICENSE_FILE=/var/lib/license-guard/license.lic
+Environment=LICENSE_IDENTITY_FILE=/var/lib/license-guard/installation.json
+Environment=LICENSE_PRODUCT=worker-suite
+Environment=LICENSE_FEATURE=messaging
+Restart=on-failure
+RestartPreventExitStatus=78
+RestartSec=5
+TimeoutStopSec=40
+KillSignal=SIGTERM
+UMask=0027
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadOnlyPaths=/var/lib/license-guard
+# DMI read access is a separate host-specific prerequisite; see docs/03.
+# MemoryDenyWriteExecute is intentionally not asserted without native-library tests.
+
+[Install]
+WantedBy=multi-user.target
+

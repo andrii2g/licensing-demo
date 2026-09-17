@@ -1,0 +1,19 @@
+[Unit]
+Description=Renew the local License Guard authorization
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+ExecStart=/usr/bin/licensectl renew --config /etc/license-guard/client.toml
+UMask=0027
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/license-guard
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+TimeoutStartSec=120
+
