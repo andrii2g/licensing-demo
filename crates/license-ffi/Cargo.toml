@@ -1,0 +1,16 @@
+[package]
+name="license-ffi"
+version.workspace=true
+edition.workspace=true
+rust-version.workspace=true
+[lib]
+name="license_guard"
+crate-type=["cdylib","rlib"]
+[features]
+dev=["license-core/dev","license-host/dev","license-store/dev"]
+[dependencies]
+license-core={path="../license-core"}
+license-host={path="../license-host"}
+license-store={path="../license-store"}
+serde.workspace=true
+serde_json.workspace=true

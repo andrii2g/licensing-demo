@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/license-core", "crates/license-host", "crates/license-store", "crates/license-server", "crates/license-admin"]
+members = ["crates/license-core", "crates/license-host", "crates/license-store", "crates/license-server", "crates/license-admin", "crates/licensectl", "crates/license-ffi"]
 resolver = "3"
 
 [workspace.package]
