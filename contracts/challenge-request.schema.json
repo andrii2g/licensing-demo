@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "challenge-request",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "action": {
+      "enum": [
+        "activate",
+        "renew",
+        "retire"
+      ]
+    },
+    "installation_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 36,
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "product": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]*$"
+    }
+  },
+  "required": [
+    "schema_version",
+    "action",
+    "installation_id",
+    "product"
+  ],
+  "additionalProperties": false
+}

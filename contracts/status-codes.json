@@ -1,0 +1,74 @@
+{
+  "abi": {
+    "0": "COMPLETE_RESULT",
+    "-1": "INVALID_ARGUMENT",
+    "-2": "BUFFER_TOO_SMALL",
+    "-3": "INTERNAL_ERROR"
+  },
+  "validation": {
+    "VALID": {
+      "authorizes": true
+    },
+    "LICENSE_MISSING": {
+      "authorizes": false
+    },
+    "LICENSE_MALFORMED": {
+      "authorizes": false
+    },
+    "UNSUPPORTED_FORMAT": {
+      "authorizes": false
+    },
+    "UNKNOWN_KEY": {
+      "authorizes": false
+    },
+    "INVALID_SIGNATURE": {
+      "authorizes": false
+    },
+    "PRODUCT_MISMATCH": {
+      "authorizes": false
+    },
+    "FEATURE_MISSING": {
+      "authorizes": false
+    },
+    "INSTALLATION_MISMATCH": {
+      "authorizes": false
+    },
+    "NOT_YET_VALID": {
+      "authorizes": false
+    },
+    "CLOCK_SUSPECT": {
+      "authorizes": false
+    },
+    "LICENSE_EXPIRED": {
+      "authorizes": false
+    },
+    "IDENTITY_UNAVAILABLE": {
+      "authorizes": false
+    },
+    "MACHINE_MISMATCH": {
+      "authorizes": false
+    },
+    "CAPACITY_EXCEEDED": {
+      "authorizes": false
+    },
+    "CAPACITY_UNAVAILABLE": {
+      "authorizes": false
+    },
+    "IO_ERROR": {
+      "authorizes": false
+    },
+    "LEASE_ROLLBACK": {
+      "authorizes": false
+    },
+    "INTERNAL_ERROR": {
+      "authorizes": false
+    }
+  },
+  "process": {
+    "0": "SUCCESS",
+    "64": "CONFIG_OR_USAGE",
+    "70": "INTERNAL_FAILURE",
+    "75": "RETRYABLE_FAILURE",
+    "78": "LICENSE_DENIED"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "protected",
+  "type": "object",
+  "properties": {
+    "typ": {
+      "enum": [
+        "license-guard-lease-v1",
+        "license-guard-request-v1"
+      ]
+    },
+    "alg": {
+      "const": "Ed25519"
+    },
+    "kid": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]*$"
+    }
+  },
+  "required": [
+    "typ",
+    "alg",
+    "kid"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "retire-response",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "installation_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 36,
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "retired_at": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4102444800
+    },
+    "reserved_until": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4102444800
+    }
+  },
+  "required": [
+    "schema_version",
+    "installation_id",
+    "retired_at",
+    "reserved_until"
+  ],
+  "additionalProperties": false
+}

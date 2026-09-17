@@ -1,0 +1,144 @@
+openapi: 3.1.0
+info:
+  title: License Guard API
+  version: 1.0.0
+  description: Normative schemas plus docs/05-api-protocol.md for transaction, signature
+    and replay rules.
+servers:
+- url: https://licenses.example.invalid
+paths:
+  /v1/challenges:
+    post:
+      operationId: createChallenge
+      description: activate requires ActivationToken; renew/retire have no bearer
+        auth. Nonce response alone never authorizes a mutation.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: challenge-request.schema.json
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: challenge-response.schema.json
+        default:
+          description: Structured failure
+          content:
+            application/json:
+              schema:
+                $ref: error.schema.json
+      security:
+      - ActivationToken: []
+      - {}
+  /v1/activations:
+    post:
+      operationId: activateInstallation
+      description: See protocol document. Mutation bodies are signed envelopes; decoded
+        payload schemas are action-specific.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: envelope.schema.json
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: envelope.schema.json
+        default:
+          description: Structured failure
+          content:
+            application/json:
+              schema:
+                $ref: error.schema.json
+      security:
+      - ActivationToken: []
+  /v1/installations/{id}/renew:
+    post:
+      operationId: renewInstallation
+      description: See protocol document. Mutation bodies are signed envelopes; decoded
+        payload schemas are action-specific.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: envelope.schema.json
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: envelope.schema.json
+        default:
+          description: Structured failure
+          content:
+            application/json:
+              schema:
+                $ref: error.schema.json
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema: &id001
+          type: string
+          minLength: 1
+          maxLength: 36
+          pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
+  /v1/installations/{id}/retire:
+    post:
+      operationId: retireInstallation
+      description: See protocol document. Mutation bodies are signed envelopes; decoded
+        payload schemas are action-specific.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: envelope.schema.json
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: retire-response.schema.json
+        default:
+          description: Structured failure
+          content:
+            application/json:
+              schema:
+                $ref: error.schema.json
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema: *id001
+  /health/live:
+    get:
+      responses:
+        '200':
+          description: Healthy
+        '503':
+          description: Not ready
+  /health/ready:
+    get:
+      responses:
+        '200':
+          description: Healthy
+        '503':
+          description: Not ready
+components:
+  securitySchemes:
+    ActivationToken:
+      type: http
+      scheme: bearer
+      description: Random activation credential, not a human license number.
