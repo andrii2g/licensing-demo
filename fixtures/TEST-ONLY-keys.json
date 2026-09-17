@@ -1,0 +1,8 @@
+{
+  "warning": "PUBLIC deterministic test keys. NEVER trust or deploy in production.",
+  "kid": "TEST-ONLY-issuer-v1",
+  "issuer_seed_hex": "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20",
+  "issuer_public_key": "ebVWLo_mVPlAeLES6KmLp5AfhTrmlb7X4OORC60ElmQ",
+  "device_seed_hex": "2122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f40",
+  "device_public_key": "5_FioQvsVZr-oZXk3OhLaVaNXSywlj60RsBoXisX8vA"
+}

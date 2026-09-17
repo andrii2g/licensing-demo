@@ -1,0 +1,147 @@
+{
+  "schema_version": 1,
+  "fixed_utc": "2027-01-17T00:00:00Z",
+  "base_context": {
+    "now": 1800144000,
+    "product": "worker-suite",
+    "required_features": [
+      "messaging"
+    ],
+    "identity": {
+      "schema_version": 1,
+      "installation_id": "11111111-1111-4111-8111-111111111111",
+      "installation_public_key": "5_FioQvsVZr-oZXk3OhLaVaNXSywlj60RsBoXisX8vA"
+    },
+    "machine_id_hash": "daf818a6d9b99acfc1f085f5e035163eb1e29c051e65a17c38d694bf6e92c84c",
+    "system_uuid_hash": "d4f98b0cc6966610efccf807a0c658cb679392dcd89b5fd788c8d813d64b71fb",
+    "logical_processors": 8
+  },
+  "cases": [
+    {
+      "file": "valid.lic",
+      "expected": "VALID",
+      "context_changes": {},
+      "signature_valid_under_test_key": true
+    },
+    {
+      "file": "expired.lic",
+      "expected": "LICENSE_EXPIRED",
+      "context_changes": {},
+      "signature_valid_under_test_key": true
+    },
+    {
+      "file": "not-yet-valid.lic",
+      "expected": "NOT_YET_VALID",
+      "context_changes": {},
+      "signature_valid_under_test_key": true
+    },
+    {
+      "file": "future-issued.lic",
+      "expected": "CLOCK_SUSPECT",
+      "context_changes": {},
+      "signature_valid_under_test_key": true
+    },
+    {
+      "file": "wrong-product.lic",
+      "expected": "PRODUCT_MISMATCH",
+      "context_changes": {},
+      "signature_valid_under_test_key": true
+    },
+    {
+      "file": "missing-feature.lic",
+      "expected": "FEATURE_MISSING",
+      "context_changes": {},
+      "signature_valid_under_test_key": true
+    },
+    {
+      "file": "wrong-installation.lic",
+      "expected": "INSTALLATION_MISMATCH",
+      "context_changes": {},
+      "signature_valid_under_test_key": true
+    },
+    {
+      "file": "wrong-machine.lic",
+      "expected": "MACHINE_MISMATCH",
+      "context_changes": {},
+      "signature_valid_under_test_key": true
+    },
+    {
+      "file": "capacity-exceeded.lic",
+      "expected": "CAPACITY_EXCEEDED",
+      "context_changes": {},
+      "signature_valid_under_test_key": true
+    },
+    {
+      "file": "capacity-unknown.lic",
+      "expected": "CAPACITY_UNAVAILABLE",
+      "context_changes": {
+        "logical_processors": null
+      },
+      "signature_valid_under_test_key": true
+    },
+    {
+      "file": "missing-dmi.lic",
+      "expected": "IDENTITY_UNAVAILABLE",
+      "context_changes": {
+        "system_uuid_hash": null
+      },
+      "signature_valid_under_test_key": true
+    },
+    {
+      "file": "offline.lic",
+      "expected": "VALID",
+      "context_changes": {},
+      "signature_valid_under_test_key": true
+    },
+    {
+      "file": "at-expiry.lic",
+      "expected": "LICENSE_EXPIRED",
+      "context_changes": {
+        "now": 1800748800
+      },
+      "signature_valid_under_test_key": true
+    },
+    {
+      "file": "unknown-key.lic",
+      "expected": "UNKNOWN_KEY",
+      "context_changes": {},
+      "signature_valid_under_test_key": true
+    },
+    {
+      "file": "unknown-field.lic",
+      "expected": "LICENSE_MALFORMED",
+      "context_changes": {},
+      "signature_valid_under_test_key": true
+    },
+    {
+      "file": "unsupported-header.lic",
+      "expected": "UNSUPPORTED_FORMAT",
+      "context_changes": {},
+      "signature_valid_under_test_key": true
+    },
+    {
+      "file": "duplicate-key.lic",
+      "expected": "LICENSE_MALFORMED",
+      "context_changes": {},
+      "signature_valid_under_test_key": true
+    },
+    {
+      "file": "bad-signature.lic",
+      "expected": "INVALID_SIGNATURE",
+      "context_changes": {},
+      "signature_valid_under_test_key": false
+    },
+    {
+      "file": "tampered-expiry.lic",
+      "expected": "INVALID_SIGNATURE",
+      "context_changes": {},
+      "signature_valid_under_test_key": false
+    },
+    {
+      "file": "invalid-chronology.lic",
+      "expected": "LICENSE_MALFORMED",
+      "context_changes": {},
+      "signature_valid_under_test_key": true
+    }
+  ]
+}

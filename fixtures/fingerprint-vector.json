@@ -1,0 +1,8 @@
+{
+  "product": "worker-suite",
+  "normalized_machine_id": "0123456789abcdef0123456789abcdef",
+  "normalized_system_uuid": "12345678-1234-4234-8234-123456789abc",
+  "public_domain_key_hex": "3067849cedb09c2ebd0fef9ee6d764b2f87f7fdb6d7d6af9d8953e5d187524db",
+  "machine_id_hash": "daf818a6d9b99acfc1f085f5e035163eb1e29c051e65a17c38d694bf6e92c84c",
+  "system_uuid_hash": "d4f98b0cc6966610efccf807a0c658cb679392dcd89b5fd788c8d813d64b71fb"
+}

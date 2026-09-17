@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "action": "activate",
+  "operation_id": "33333333-3333-4333-8333-333333333333",
+  "challenge_id": "44444444-4444-4444-8444-444444444444",
+  "nonce": "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8",
+  "installation_id": "11111111-1111-4111-8111-111111111111",
+  "product": "worker-suite",
+  "installation_public_key": "5_FioQvsVZr-oZXk3OhLaVaNXSywlj60RsBoXisX8vA",
+  "inventory": {
+    "schema_version": 1,
+    "collected_at": 1800144000,
+    "hostname": "vmware-demo-01",
+    "network_interfaces": [
+      {
+        "name": "ens160",
+        "mac": "00:50:56:12:34:56",
+        "kind": "virtual"
+      },
+      {
+        "name": "ens192",
+        "mac": "02:11:22:33:44:55",
+        "kind": "virtual"
+      }
+    ],
+    "cpu": {
+      "model": "Synthetic guest CPU",
+      "sockets": 1,
+      "cores": 4,
+      "logical_processors": 8,
+      "available_logical_processors": 4
+    },
+    "os": {
+      "id": "ubuntu",
+      "version": "24.04",
+      "kernel": "synthetic-6.x",
+      "architecture": "x86_64"
+    },
+    "virtualization": "vmware",
+    "machine_id_hash": "daf818a6d9b99acfc1f085f5e035163eb1e29c051e65a17c38d694bf6e92c84c",
+    "system_uuid_hash": "d4f98b0cc6966610efccf807a0c658cb679392dcd89b5fd788c8d813d64b71fb"
+  }
+}
