@@ -1,0 +1,17 @@
+target/
+artifacts/
+**/bin/
+**/obj/
+.dev-state/
+*.db
+*.db-shm
+*.db-wal
+*.key
+!fixtures/TEST-ONLY-keys.json
+pending-operation.json
+install-state.json
+.env
+
+.dev-tools/
+*.token
+__pycache__/
