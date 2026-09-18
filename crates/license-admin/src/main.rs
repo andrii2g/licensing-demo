@@ -101,7 +101,7 @@ fn run() -> std::result::Result<(), Box<dyn std::error::Error>> {
             command: EntitlementCommand::Create { input },
         } => {
             let e: Entitlement =
-                envelope::strict(&license_store::read_service(&input, 16384, false)?, 16384)?;
+                envelope::object(&license_store::read_service(&input, 16384, false)?, 16384)?;
             println!(
                 "{}",
                 license_server::repository::create(&mut db, &e, now())?

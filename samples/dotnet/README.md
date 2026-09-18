@@ -5,7 +5,7 @@
 `NativeAotWorker` performs its startup check before host construction/start. Its per-job gate, watchdog and independent drain controller illustrate service integration. `NativeAotWorker.Tests` is a deterministic executable test harness using an internal TimeProvider; it does not need a test framework or real-time sleeps.
 
 ```bash
-dotnet run --project samples/dotnet/NativeAotWorker.Tests -c Release
+dotnet run --project samples/dotnet/NativeAotWorker.Tests -c Release -r linux-x64 -p:PublishAot=false -p:RestoreLockedMode=true
 bash scripts/demo-local.sh --extended
 bash samples/dotnet/publish-linux.sh linux-x64
 bash scripts/test-aot.sh

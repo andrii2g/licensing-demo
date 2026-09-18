@@ -1,0 +1,6 @@
+<Project>
+  <PropertyGroup>
+    <NuGetLockFilePath Condition="'$(PublishAot)' == 'true'">packages.aot.lock.json</NuGetLockFilePath>
+    <NuGetLockFilePath Condition="'$(PublishAot)' != 'true'">packages.lock.json</NuGetLockFilePath>
+  </PropertyGroup>
+</Project>
