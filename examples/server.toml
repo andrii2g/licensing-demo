@@ -9,9 +9,9 @@ operation_cache_seconds = 86400
 max_outstanding_challenges_per_installation = 10
 request_body_limit_bytes = 131072
 sqlite_busy_timeout_milliseconds = 5000
-# Exact rate limiter must be implemented and tested; these are defaults.
+# Fixed 60-second rate windows; bounds are enforced and tested.
 requests_per_ip_per_minute = 60
 requests_per_installation_per_minute = 20
-# Trust proxy headers only from a configured local reverse proxy.
+# Reserved for another server implementation; this reference ignores forwarded headers.
 trusted_proxy_addresses = ["127.0.0.1", "::1"]
 

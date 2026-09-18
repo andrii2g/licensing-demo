@@ -70,6 +70,11 @@ static class Program
             clock.Advance(1);
             Assert(drain.IsCancellationRequested, "drain cancels at exactly 30 seconds");
         }
+        clock = new FakeTime(start);
+        var disposedDrain = new DrainController(clock);
+        disposedDrain.Start();
+        disposedDrain.Dispose();
+        Assert(clock.FireQueuedCallbacks() == 1, "queued drain callback after disposal is harmless");
         Console.WriteLine($"PASS: {_assertions} deterministic gate assertions (no sleeps); monotonic rollback, renewal, sequence/digest, exact expiry and drain admission");
     }
     sealed class FakeTime(long start) : TimeProvider
@@ -84,6 +89,11 @@ static class Program
         {
             Wall += seconds; _ticks += seconds * TimeSpan.TicksPerSecond;
             foreach (var timer in _timers.ToArray()) timer.Fire(_ticks);
+        }
+        public int FireQueuedCallbacks()
+        {
+            foreach (var timer in _timers.ToArray()) timer.FireQueued();
+            return _timers.Count;
         }
         public override ITimer CreateTimer(TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period)
         {
@@ -100,6 +110,7 @@ static class Program
                 return true;
             }
             public void Fire(long ticks) { if (ticks >= _due) { _due = long.MaxValue; callback(state); } }
+            public void FireQueued() => callback(state);
             public void Dispose() => _due = long.MaxValue;
             public ValueTask DisposeAsync() { Dispose(); return ValueTask.CompletedTask; }
         }
