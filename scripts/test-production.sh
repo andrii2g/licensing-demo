@@ -11,8 +11,9 @@ trap 'docker rm -f "$container" >/dev/null 2>&1 || true' EXIT
 docker create --network none --name "$container" \
   --env LICENSE_GUARD_DEV_TRUST=/fixtures/TEST-ONLY-keys.json \
   --env LICENSE_GUARD_DEV_INVENTORY=/fixtures/manifest.json \
-  ubuntu:24.04 sh -eu -c 'mkdir /trusted; cp /fixtures/valid.lic /fixtures/installation.json /trusted/; chmod 750 /trusted; chmod 640 /trusted/*; LD_LIBRARY_PATH=/ /production-trust' >/dev/null
+  ubuntu:24.04 sh /test-production.sh >/dev/null
 docker cp fixtures "$container:/fixtures"
+docker cp tests/production-container.sh "$container:/test-production.sh"
 docker cp target/production/debug/liblicense_guard.so "$container:/liblicense_guard.so"
 docker cp artifacts/tests/production-trust "$container:/production-trust"
 docker start --attach "$container"

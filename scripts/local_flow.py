@@ -202,12 +202,19 @@ def main():
                     with urllib.request.urlopen(f"http://127.0.0.1:{port}/health/ready",timeout=1): break
                 except OSError: time.sleep(0.05)
             run([*short_ctl,"status","--json"],env,expected=78)
+            run([*short_ctl,"renew"],env)
+            good=(short/"license.lic").read_bytes()
+            p=Worker(worker_command,short_env);processes.append(p);p.until("JOB_STARTED")
+            write(short/"license.lic",b"corrupt-update",0o640)
+            text=p.finish(78,timeout=35)
+            assert "LICENSE_DENIED" in text and "JOB_COMPLETED" in text
+            write(short/"license.lic",good,0o640)
         retired=json.loads(run([*ctl,"retire"],env))
         assert retired["reserved_until"]>=int(time.time())
         run([*ctl,"remove"],env)
         assert (install/"installation.json").exists() and not (install/"license.lic").exists()
         print("PASS: activation, inspect/status, two workers per installation, graceful SIGTERM, renewal, missing/tampered/product/feature/library startup denial, retirement and local removal")
-        if a.extended: print("PASS: live higher-sequence renewal, server outage, runtime expiry/draining, expired startup, failed renewal preserves file")
+        if a.extended: print("PASS: live higher-sequence renewal, server outage, runtime expiry/draining, expired startup, failed renewal preserves file; invalid runtime replacement is terminal")
         print(f"Target: Linux x86_64 glibc; synthetic inventory={not a.real_host}")
     finally:
         for p in processes:p.close()
