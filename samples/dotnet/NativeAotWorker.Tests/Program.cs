@@ -61,15 +61,47 @@ static class Program
         Assert(gate.Close() == 1 && !gate.TryEnter(out _), "close preserves admitted work");
         active!.Dispose();
         Assert(gate.Close() == 0, "drained");
+        clock = new FakeTime(start);
+        using (var drain = new DrainController(clock))
+        {
+            drain.Start();
+            clock.Advance(29);
+            Assert(!drain.IsCancellationRequested, "drain permits work before timeout");
+            clock.Advance(1);
+            Assert(drain.IsCancellationRequested, "drain cancels at exactly 30 seconds");
+        }
         Console.WriteLine($"PASS: {_assertions} deterministic gate assertions (no sleeps); monotonic rollback, renewal, sequence/digest, exact expiry and drain admission");
     }
     sealed class FakeTime(long start) : TimeProvider
     {
         public long Wall = start;
         long _ticks;
+        readonly List<FakeTimer> _timers = [];
         public override long TimestampFrequency => TimeSpan.TicksPerSecond;
         public override long GetTimestamp() => _ticks;
         public override DateTimeOffset GetUtcNow() => DateTimeOffset.FromUnixTimeSeconds(Wall);
-        public void Advance(int seconds) { Wall += seconds; _ticks += seconds * TimeSpan.TicksPerSecond; }
+        public void Advance(int seconds)
+        {
+            Wall += seconds; _ticks += seconds * TimeSpan.TicksPerSecond;
+            foreach (var timer in _timers.ToArray()) timer.Fire(_ticks);
+        }
+        public override ITimer CreateTimer(TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period)
+        {
+            var timer = new FakeTimer(this, callback, state);
+            _timers.Add(timer); timer.Change(dueTime, period); return timer;
+        }
+        sealed class FakeTimer(FakeTime clock, TimerCallback callback, object? state) : ITimer
+        {
+            long _due = long.MaxValue;
+            public bool Change(TimeSpan dueTime, TimeSpan period)
+            {
+                if (period != Timeout.InfiniteTimeSpan) throw new NotSupportedException();
+                _due = dueTime == Timeout.InfiniteTimeSpan ? long.MaxValue : clock._ticks + dueTime.Ticks;
+                return true;
+            }
+            public void Fire(long ticks) { if (ticks >= _due) { _due = long.MaxValue; callback(state); } }
+            public void Dispose() => _due = long.MaxValue;
+            public ValueTask DisposeAsync() { Dispose(); return ValueTask.CompletedTask; }
+        }
     }
 }

@@ -106,7 +106,7 @@ fn installation_limit(app: &App, id: &str) -> Result<()> {
 }
 async fn challenge(State(app): State<Arc<App>>, req: Request) -> Result<impl IntoResponse> {
     let (t, b) = body(&app, req).await?;
-    let r: ChallengeRequest = license_core::envelope::strict(&b, 131072)?;
+    let r: ChallengeRequest = license_core::envelope::object(&b, 131072)?;
     r.validate()?;
     installation_limit(&app, &r.installation_id)?;
     let permit = app

@@ -23,7 +23,10 @@ internal sealed class LicenseGate(TimeProvider? timeProvider = null)
         {
             failure = result.Code;
             if (_closed || !result.Valid)
-                { _closed = true; return false; }
+                {
+                    _closed = true;
+                    return false;
+                }
 
             var now = _time.GetUtcNow();
             var remaining = DateTimeOffset.FromUnixTimeSeconds(
@@ -31,7 +34,10 @@ internal sealed class LicenseGate(TimeProvider? timeProvider = null)
             if (remaining <= TimeSpan.Zero)
             {
                 failure = "LICENSE_EXPIRED";
-                { _closed = true; return false; }
+                {
+                    _closed = true;
+                    return false;
+                }
             }
 
             if (_installationId is not null)
@@ -39,13 +45,19 @@ internal sealed class LicenseGate(TimeProvider? timeProvider = null)
                 if (_installationId != result.InstallationId || _licenseId != result.LicenseId)
                 {
                     failure = "INSTALLATION_MISMATCH";
-                    { _closed = true; return false; }
+                    {
+                    _closed = true;
+                    return false;
+                }
                 }
                 if (result.Sequence!.Value < _sequence ||
                     (result.Sequence!.Value == _sequence && result.LeaseDigest != _digest))
                 {
                     failure = "LEASE_ROLLBACK";
-                    { _closed = true; return false; }
+                    {
+                    _closed = true;
+                    return false;
+                }
                 }
                 if (result.Sequence!.Value == _sequence)
                 {
@@ -54,7 +66,10 @@ internal sealed class LicenseGate(TimeProvider? timeProvider = null)
                     if (remaining <= TimeSpan.Zero)
                     {
                         failure = "LICENSE_EXPIRED";
-                        { _closed = true; return false; }
+                        {
+                    _closed = true;
+                    return false;
+                }
                     }
                 }
             }

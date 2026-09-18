@@ -78,6 +78,21 @@ impl SecureDir {
         }
         Ok(Self { file, allowed_uid })
     }
+    pub fn create_service(path: &Path) -> Result<Self> {
+        let parent = Self::open_service(path.parent().ok_or(Code::IoError)?)?;
+        let name = path
+            .file_name()
+            .and_then(|s| s.to_str())
+            .ok_or(Code::IoError)?;
+        component(name)?;
+        match fs::mkdirat(&parent.file, name, Mode::from_raw_mode(0o750)) {
+            Ok(()) => {}
+            Err(rustix::io::Errno::EXIST) => {}
+            Err(e) => return Err(io(e)),
+        }
+        fs::fsync(&parent.file).map_err(io)?;
+        Self::open_service(path)
+    }
     pub fn create(path: &Path) -> Result<Self> {
         let parent = Self::open(path.parent().ok_or(Code::IoError)?)?;
         let name = path
@@ -112,7 +127,7 @@ impl SecureDir {
         let m = file.metadata().map_err(io)?;
         if !m.is_file()
             || !owner(m.uid(), self.allowed_uid)
-            || m.mode() & if private { 0o077 } else { 0o022 } != 0
+            || m.mode() & if private { 0o177 } else { 0o137 } != 0
         {
             return Err(Code::IoError);
         }
@@ -137,7 +152,7 @@ impl SecureDir {
         let m = file.metadata().map_err(io)?;
         if !m.is_file()
             || !owner(m.uid(), self.allowed_uid)
-            || m.mode() & if private { 0o077 } else { 0o022 } != 0
+            || m.mode() & if private { 0o177 } else { 0o137 } != 0
             || m.len() > limit as u64
         {
             return Err(Code::IoError);

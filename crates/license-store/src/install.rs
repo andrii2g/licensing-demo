@@ -1,5 +1,5 @@
 use crate::SecureDir;
-use license_core::{envelope::strict, *};
+use license_core::{envelope::object as strict, *};
 use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -14,11 +14,15 @@ pub fn install(
     ctx: &Context,
 ) -> Result<VerifiedLease> {
     let candidate = verify(bytes, trust, ctx)?;
+    let mut current_matches = false;
+    let mut metadata_matches = false;
     let mut sequence = 0;
     let mut digest = String::new();
     match dir.read("install-state.json", 4096, true) {
         Ok(b) => {
             let high: HighWater = strict(&b, 4096)?;
+            metadata_matches =
+                high.sequence == candidate.claims.sequence && high.digest == candidate.digest;
             sequence = high.sequence;
             digest = high.digest;
         }
@@ -29,6 +33,8 @@ pub fn install(
         Ok(b) => {
             // Expired current authorization still supplies an authenticated sequence.
             let current = policy::authenticate(&b, trust)?;
+            current_matches = current.claims.sequence == candidate.claims.sequence
+                && current.digest == candidate.digest;
             if current.claims.installation_id != ctx.identity.installation_id {
                 return Err(Code::InstallationMismatch);
             }
@@ -49,16 +55,20 @@ pub fn install(
     {
         return Err(Code::LeaseRollback);
     }
-    dir.atomic("license.lic", bytes, false)?;
+    if !current_matches {
+        dir.atomic("license.lic", bytes, false)?;
+    }
     let high = HighWater {
         sequence: candidate.claims.sequence,
         digest: candidate.digest.clone(),
     };
-    dir.atomic(
-        "install-state.json",
-        &serde_json::to_vec(&high).map_err(|_| Code::InternalError)?,
-        true,
-    )?;
+    if !metadata_matches {
+        dir.atomic(
+            "install-state.json",
+            &serde_json::to_vec(&high).map_err(|_| Code::InternalError)?,
+            true,
+        )?;
+    }
     Ok(candidate)
 }
 

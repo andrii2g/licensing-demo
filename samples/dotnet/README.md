@@ -1,24 +1,17 @@
-# Native AOT worker sample
+# .NET 10 integration
 
-This is actual C# sample source with a native ABI dependency, not a compiled binary. Implement liblicense_guard.so from contracts/license_guard.h first.
+`LicenseGuard.Managed` is the reusable wrapper project. It uses source-generated LibraryImport and System.Text.Json, loads one absolute configured native library per process, checks ABI version, and distinguishes completed native calls from valid authorization.
 
-Build on Linux with the .NET 10 SDK and Native AOT native prerequisites:
-~~~bash
+`NativeAotWorker` performs its startup check before host construction/start. Its per-job gate, watchdog and independent drain controller illustrate service integration. `NativeAotWorker.Tests` is a deterministic executable test harness using an internal TimeProvider; it does not need a test framework or real-time sleeps.
+
+```bash
+dotnet run --project samples/dotnet/NativeAotWorker.Tests -c Release
+bash scripts/demo-local.sh --extended
 bash samples/dotnet/publish-linux.sh linux-x64
-~~~
-Publish output: artifacts/native-worker/linux-x64/NativeAotWorker.
+bash scripts/test-aot.sh
+bash scripts/test-runtime-image.sh
+```
 
-Trusted service environment:
-~~~text
-LICENSE_NATIVE_PATH=/usr/lib/license-guard/liblicense_guard.so
-LICENSE_FILE=/var/lib/license-guard/license.lic
-LICENSE_IDENTITY_FILE=/var/lib/license-guard/installation.json
-LICENSE_PRODUCT=worker-suite
-LICENSE_FEATURE=messaging
-~~~
+The worker is configured through trusted service environment values: LICENSE_NATIVE_PATH, LICENSE_FILE, LICENSE_IDENTITY_FILE, LICENSE_PRODUCT and LICENSE_FEATURE. These values do not supply a clock, inventory, keys or validity override. The dev native artifact alone accepts separate development test inputs.
 
-The executable starts only with a valid license. Native call success alone does not authorize the service: the returned validity, code and claims are checked. Missing library/license exits 78. There is deliberately no demo bypass or fake-license flag.
-See docs/08-dotnet-native-aot.md for lifecycle tests and publish acceptance. A future test build of the Rust library may contain test trust; production must reject fixture keys.
-The sample reads environment variables because systemd controls them in this deployment. Do not expose these settings as untrusted per-request inputs.
-Package restore/build/publish and real interop tests were not run in the kit-creation environment; run them before treating the sample as verified.
-
+The only validated publish RID is linux-x64. An AOT executable still requires the matching external Rust .so and native OS libraries. See the root README and IMPLEMENTATION_STATUS.md for prerequisites, commands and actual evidence.

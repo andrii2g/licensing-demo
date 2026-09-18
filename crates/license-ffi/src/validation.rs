@@ -13,7 +13,7 @@ pub struct Request {
 }
 impl Request {
     pub fn parse(bytes: &[u8]) -> Result<Self> {
-        let r: Self = envelope::strict(bytes, 8192)?;
+        let r: Self = envelope::object(bytes, 8192)?;
         error::require(r.schema_version == 1)?;
         for p in [&r.license_path, &r.identity_path] {
             error::require(p.len() <= 4096 && Path::new(p).is_absolute() && !p.contains('\0'))?;
@@ -37,7 +37,7 @@ pub fn validate(r: &Request) -> ValidationResult {
     let now = now();
     let result = (|| {
         let bytes = license_store::read_absolute(Path::new(&r.license_path), 65536, false)?;
-        let identity: Identity = envelope::strict(
+        let identity: Identity = envelope::object(
             &license_store::read_absolute(Path::new(&r.identity_path), 4096, false)?,
             4096,
         )?;

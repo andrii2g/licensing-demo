@@ -59,7 +59,7 @@ pub fn installation(c: &Connection, id: &str) -> Result<Option<Installation>> {
             license_id: v.0,
             key: v.1,
             status: v.2,
-            binding: license_core::envelope::strict(v.3.as_bytes(), 4096)?,
+            binding: license_core::envelope::object(v.3.as_bytes(), 4096)?,
             sequence: v.4,
             expiry: v.5,
             reserved: v.6,

@@ -2,11 +2,11 @@ use crate::SecureDir;
 use ed25519_dalek::SigningKey;
 use license_core::{
     crypto::random,
-    envelope::{encode, fixed, strict},
+    envelope::{encode, fixed, object as strict},
     *,
 };
 use serde::{Deserialize, Serialize};
-use zeroize::Zeroizing;
+use zeroize::{Zeroize, Zeroizing};
 pub struct Device {
     pub identity: Identity,
     pub key: SigningKey,
@@ -14,8 +14,14 @@ pub struct Device {
 #[derive(Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Journal {
+    #[serde(deserialize_with = "license_core::json_object")]
     identity: Identity,
     seed: String,
+}
+impl Drop for Journal {
+    fn drop(&mut self) {
+        self.seed.zeroize();
+    }
 }
 impl Device {
     pub fn load(dir: &SecureDir) -> Result<Self> {

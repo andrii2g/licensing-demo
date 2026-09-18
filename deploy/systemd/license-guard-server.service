@@ -1,0 +1,23 @@
+[Unit]
+Description=License Guard reference licensing API
+After=network.target
+
+[Service]
+Type=simple
+User=licenseissuer
+Group=licenseissuer
+ExecStart=/usr/bin/license-server --config /etc/license-guard-server/server.toml
+KillSignal=SIGINT
+Restart=on-failure
+RestartSec=5
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/license-guard-server
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target

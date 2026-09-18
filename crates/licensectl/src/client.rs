@@ -63,7 +63,7 @@ impl Client {
                         if status.is_success() {
                             return Ok(bytes);
                         }
-                        let code = license_core::envelope::strict::<ApiError>(&bytes, 65536)
+                        let code = license_core::envelope::object::<ApiError>(&bytes, 65536)
                             .ok()
                             .filter(|e| {
                                 e.schema_version == 1

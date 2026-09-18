@@ -128,3 +128,56 @@ fn signatures_use_transmitted_bytes() {
         Code::InvalidSignature
     );
 }
+
+#[test]
+fn positional_arrays_are_not_v1_objects() {
+    use ed25519_dalek::SigningKey;
+    let key = SigningKey::from_bytes(&std::array::from_fn(|i| (i + 1) as u8));
+    let (t, ctx) = setup();
+    let base: Claims = serde_json::from_slice(&fixture("base-claims.json")).unwrap();
+    let array = json!([
+        base.schema_version,
+        base.issuer,
+        base.license_id,
+        base.customer_id,
+        base.product,
+        base.installation_id,
+        base.installation_public_key_sha256,
+        base.sequence,
+        base.issued_at,
+        base.not_before,
+        base.lease_valid_until,
+        base.entitlement_expires_at,
+        base.mode,
+        base.features,
+        base.binding,
+        base.max_logical_processors
+    ]);
+    let signed = crypto::sign(&array, LEASE_TYPE, "TEST-ONLY-issuer-v1", &key).unwrap();
+    assert_eq!(
+        verify(&serde_json::to_vec(&signed).unwrap(), &t, &ctx).unwrap_err(),
+        Code::LicenseMalformed
+    );
+    let e = Envelope::parse(&fixture("valid.lic")).unwrap();
+    assert!(
+        Envelope::parse(
+            &serde_json::to_vec(&json!([e.protected, e.payload, e.signature])).unwrap()
+        )
+        .is_err()
+    );
+    let mut nested: Value = serde_json::from_slice(&fixture("base-claims.json")).unwrap();
+    nested["binding"] = json!([
+        "linux-host-v1",
+        base.binding.machine_id_hash,
+        base.binding.system_uuid_hash
+    ]);
+    let signed = crypto::sign(&nested, LEASE_TYPE, "TEST-ONLY-issuer-v1", &key).unwrap();
+    assert_eq!(
+        verify(&serde_json::to_vec(&signed).unwrap(), &t, &ctx).unwrap_err(),
+        Code::LicenseMalformed
+    );
+    let mut i: Value =
+        serde_json::from_str(include_str!("../../../examples/inventory-vmware.json")).unwrap();
+    i["cpu"] = json!([null, 1, 4, 8, 8]);
+    assert!(serde_json::from_value::<Inventory>(i).is_err());
+}

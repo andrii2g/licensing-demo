@@ -93,6 +93,11 @@ pub fn strict<T: DeserializeOwned>(bytes: &[u8], limit: usize) -> Result<T> {
     de.end().map_err(|_| Code::LicenseMalformed)?;
     serde_json::from_value(value).map_err(|_| Code::LicenseMalformed)
 }
+/// V1 protocol records are JSON objects, never positional struct arrays.
+pub fn object<T: DeserializeOwned>(bytes: &[u8], limit: usize) -> Result<T> {
+    let map: serde_json::Map<String, Value> = strict(bytes, limit)?;
+    serde_json::from_value(Value::Object(map)).map_err(|_| Code::LicenseMalformed)
+}
 pub fn encode(bytes: &[u8]) -> String {
     URL_SAFE_NO_PAD.encode(bytes)
 }
@@ -113,14 +118,14 @@ pub fn fixed<const N: usize>(s: &str) -> Result<[u8; N]> {
 }
 impl Envelope {
     pub fn parse(bytes: &[u8]) -> Result<Self> {
-        let e: Self = strict(bytes, MAX_ENVELOPE)?;
+        let e: Self = object(bytes, MAX_ENVELOPE)?;
         decode(&e.protected, 1024)?;
         decode(&e.payload, MAX_PAYLOAD)?;
         fixed::<64>(&e.signature)?;
         Ok(e)
     }
     pub fn header(&self, typ: &str) -> Result<Header> {
-        let h: Header = strict(&decode(&self.protected, 1024)?, 1024)?;
+        let h: Header = object(&decode(&self.protected, 1024)?, 1024)?;
         if h.typ != typ || h.alg != "Ed25519" {
             return Err(Code::UnsupportedFormat);
         }
@@ -136,6 +141,6 @@ impl Envelope {
         )
     }
     pub fn payload<T: DeserializeOwned>(&self) -> Result<T> {
-        strict(&decode(&self.payload, MAX_PAYLOAD)?, MAX_PAYLOAD)
+        object(&decode(&self.payload, MAX_PAYLOAD)?, MAX_PAYLOAD)
     }
 }

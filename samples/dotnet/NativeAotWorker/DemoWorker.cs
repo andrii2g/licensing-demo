@@ -7,7 +7,7 @@ internal sealed class DemoWorker(
     LicenseGate gate, LicenseShutdown shutdown, ExitState exitState,
     IHostApplicationLifetime lifetime, ILogger<DemoWorker> logger) : BackgroundService
 {
-    private readonly CancellationTokenSource _drain = new();
+    private readonly DrainController _drain = new();
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -55,7 +55,7 @@ internal sealed class DemoWorker(
     public override async Task StopAsync(CancellationToken cancellationToken)
     {
         gate.Close();
-        _drain.CancelAfter(SampleOptions.DrainTimeout);
+        _drain.Start();
         await base.StopAsync(cancellationToken);
     }
 

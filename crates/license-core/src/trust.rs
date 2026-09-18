@@ -5,6 +5,9 @@ pub const FIXTURE_DEVICE: &str = "5_FioQvsVZr-oZXk3OhLaVaNXSywlj60RsBoXisX8vA";
 #[derive(Clone, Default)]
 pub struct Trust(BTreeMap<String, [u8; 32]>);
 impl Trust {
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
     pub fn new(pairs: Vec<(String, String)>) -> Result<Self> {
         let mut out = BTreeMap::new();
         for (kid, key) in pairs {

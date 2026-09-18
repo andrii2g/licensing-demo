@@ -65,7 +65,7 @@ fn run() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
     if let Command::Keygen { directory, kid } = args.command {
         identifier(&kid)?;
-        let d = license_store::SecureDir::create(&directory)?;
+        let d = license_store::SecureDir::create_service(&directory)?;
         let _lock = d.lock()?;
         match d.read("issuer.key", 32, true) {
             Err(Code::LicenseMissing) => {}

@@ -110,7 +110,7 @@ fn status(c: &config::Config, file: Option<PathBuf>, json: bool) -> Result<()> {
     let result = (|| {
         let dir = license_store::SecureDir::open(&c.state_dir)?;
         let identity: Identity =
-            envelope::strict(&dir.read("installation.json", 4096, false)?, 4096)?;
+            envelope::object(&dir.read("installation.json", 4096, false)?, 4096)?;
         let bytes = if let Some(p) = file {
             license_store::read_absolute(&p, 65536, false)?
         } else {

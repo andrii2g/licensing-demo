@@ -1,6 +1,6 @@
 use crate::{client::Client, config::Config, *};
 use license_core::{
-    envelope::{Envelope, strict},
+    envelope::{Envelope, object as strict},
     *,
 };
 use license_store::{Device, SecureDir};

@@ -13,6 +13,38 @@ where
 {
     Option::deserialize(d)
 }
+pub fn json_object<'de, D, T>(d: D) -> std::result::Result<T, D::Error>
+where
+    D: Deserializer<'de>,
+    T: serde::de::DeserializeOwned,
+{
+    let map = serde_json::Map::<String, serde_json::Value>::deserialize(d)?;
+    serde_json::from_value(serde_json::Value::Object(map)).map_err(serde::de::Error::custom)
+}
+pub fn optional_object<'de, D, T>(d: D) -> std::result::Result<Option<T>, D::Error>
+where
+    D: Deserializer<'de>,
+    T: serde::de::DeserializeOwned,
+{
+    let value = Option::<serde_json::Map<String, serde_json::Value>>::deserialize(d)?;
+    value
+        .map(|m| {
+            serde_json::from_value(serde_json::Value::Object(m)).map_err(serde::de::Error::custom)
+        })
+        .transpose()
+}
+pub fn object_array<'de, D, T>(d: D) -> std::result::Result<Vec<T>, D::Error>
+where
+    D: Deserializer<'de>,
+    T: serde::de::DeserializeOwned,
+{
+    Vec::<serde_json::Map<String, serde_json::Value>>::deserialize(d)?
+        .into_iter()
+        .map(|m| {
+            serde_json::from_value(serde_json::Value::Object(m)).map_err(serde::de::Error::custom)
+        })
+        .collect()
+}
 pub fn identifier(s: &str) -> Result<()> {
     require(
         !s.is_empty()
@@ -99,6 +131,7 @@ pub struct Claims {
     pub entitlement_expires_at: i64,
     pub mode: Mode,
     pub features: Vec<String>,
+    #[serde(deserialize_with = "json_object")]
     pub binding: Binding,
     #[serde(deserialize_with = "nullable")]
     pub max_logical_processors: Option<u32>,
@@ -202,8 +235,11 @@ pub struct Inventory {
     pub schema_version: u32,
     pub collected_at: i64,
     pub hostname: String,
+    #[serde(deserialize_with = "object_array")]
     pub network_interfaces: Vec<Nic>,
+    #[serde(deserialize_with = "json_object")]
     pub cpu: Cpu,
+    #[serde(deserialize_with = "json_object")]
     pub os: Os,
     pub virtualization: Virtualization,
     pub machine_id_hash: String,
@@ -314,7 +350,11 @@ pub struct DeviceRequest {
     pub installation_id: String,
     pub product: String,
     pub installation_public_key: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "optional_object"
+    )]
     pub inventory: Option<Inventory>,
 }
 impl DeviceRequest {
