@@ -10,6 +10,7 @@ static void *check(void *arg){
     memset(&buffer,0xa5,sizeof buffer);size_t n=999;
     assert(lg_validate_v1(request,sizeof request-1,buffer.out,sizeof buffer.out,&n)==0);
     assert(n>0&&n<sizeof buffer.out);
+    buffer.out[n] = 0;
     assert(strstr((char*)buffer.out,"\"valid\":false")!=NULL);
     for(size_t i=0;i<16;i++)assert(buffer.a[i]==0xa5&&buffer.b[i]==0xa5);
     return NULL;
