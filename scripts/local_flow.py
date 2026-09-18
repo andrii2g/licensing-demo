@@ -162,11 +162,17 @@ def main():
             for source,name in [(executable,"NativeAotWorker"),(binaries/"liblicense_guard.so","liblicense_guard.so"),(install/"license.lic","license.lic"),(install/"installation.json","installation.json"),(issuer/"trust.json","trust.json"),(state/"inventory.json","inventory.json")]:
                 shutil.copy2(source,smoke/name)
             container_name="license-guard-smoke-"+str(os.getpid())
-            command=["docker","run","--rm","--network","none","--name",container_name,"--user",f"{os.getuid()}:{os.getgid()}","--mount",f"type=bind,src={smoke},dst=/demo,readonly"]
+            command=["docker","create","--network","none","--name",container_name,"--user",f"{os.getuid()}:{os.getgid()}"]
             for key,value in {"LICENSE_NATIVE_PATH":"/demo/liblicense_guard.so","LICENSE_FILE":"/demo/license.lic","LICENSE_IDENTITY_FILE":"/demo/installation.json","LICENSE_GUARD_DEV_TRUST":"/demo/trust.json","LICENSE_GUARD_DEV_INVENTORY":"/demo/inventory.json"}.items():
                 command += ["--env",f"{key}={value}"]
             command += ["ubuntu:24.04","sh","-c","test ! -d /usr/share/dotnet && ! command -v dotnet && exec /demo/NativeAotWorker"]
-            p=Worker(command,env);processes.append(p);p.until("JOB_STARTED",timeout=30);p.finish(0,stop=True)
+            subprocess.run(command,check=True,stdout=subprocess.DEVNULL)
+            subprocess.run(["docker","cp","-a",str(smoke),container_name+":/demo"],check=True)
+            p=Worker(["docker","start","--attach",container_name],env);processes.append(p);p.until("JOB_STARTED",timeout=30)
+            subprocess.run(["docker","kill","--signal=TERM",container_name],check=True,stdout=subprocess.DEVNULL)
+            p.finish(0)
+            result=subprocess.check_output(["docker","inspect","--format","{{.State.ExitCode}}",container_name]).strip()
+            assert result==b"0",result
             print("PASS: published Native AOT worker on stock Ubuntu 24.04 with no .NET runtime and no network")
         if a.extended:
             # Separate short-lease installation. Drives runtime expiry without modifying wall time.

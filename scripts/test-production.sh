@@ -6,13 +6,18 @@ cargo build --locked -p license-ffi -p licensectl --target-dir target/production
 mkdir -p artifacts/tests
 cc -std=c11 -Wall -Wextra -Werror tests/production_trust.c -Ltarget/production/debug -llicense_guard -Wl,-rpath,/check -o artifacts/tests/production-trust
 if strings target/production/debug/liblicense_guard.so | grep -q 'LICENSE_GUARD_DEV_'; then echo "Development override in production artifact" >&2; exit 1; fi
-docker run --rm --network none \
-  --mount "type=bind,src=$PWD/fixtures,dst=/fixtures,readonly" \
-  --mount "type=bind,src=$PWD/target/production/debug/liblicense_guard.so,dst=/check/liblicense_guard.so,readonly" \
-  --mount "type=bind,src=$PWD/artifacts/tests/production-trust,dst=/check/production-trust,readonly" \
+container="license-guard-production-$$"
+trap 'docker rm -f "$container" >/dev/null 2>&1 || true' EXIT
+docker create --network none --name "$container" \
   --env LICENSE_GUARD_DEV_TRUST=/fixtures/TEST-ONLY-keys.json \
   --env LICENSE_GUARD_DEV_INVENTORY=/fixtures/manifest.json \
-  ubuntu:24.04 sh -eu -c 'mkdir /trusted; cp /fixtures/valid.lic /fixtures/installation.json /trusted/; chmod 750 /trusted; chmod 640 /trusted/*; /check/production-trust'
+  ubuntu:24.04 sh -eu -c 'mkdir /trusted; cp /fixtures/valid.lic /fixtures/installation.json /trusted/; chmod 750 /trusted; chmod 640 /trusted/*; LD_LIBRARY_PATH=/ /production-trust' >/dev/null
+docker cp fixtures "$container:/fixtures"
+docker cp target/production/debug/liblicense_guard.so "$container:/liblicense_guard.so"
+docker cp artifacts/tests/production-trust "$container:/production-trust"
+docker start --attach "$container"
+[[ "$(docker inspect --format '{{.State.ExitCode}}' "$container")" == 0 ]]
+docker rm "$container" >/dev/null
 test_dir="$(mktemp -d /tmp/license-guard-trust-test.XXXXXX)"
 trap 'rm -rf -- "$test_dir"' EXIT
 python3 - "$test_dir/trust.json" <<'PY'
