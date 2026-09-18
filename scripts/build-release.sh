@@ -2,6 +2,8 @@
 set -euo pipefail
 cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.."
 [[ "$(uname -m)" == x86_64 && "$(uname -s)" == Linux ]] || { echo "Only Linux x86_64 glibc is validated." >&2; exit 64; }
+package_prefix="${LICENSE_GUARD_PACKAGE_PREFIX:-license-guard}"
+[[ "$package_prefix" =~ ^[a-zA-Z0-9._-]+$ ]] || exit 64
 trust_file="${LICENSE_GUARD_TRUST_FILE:?Set an absolute path to your public issuer trust JSON}"
 [[ "$trust_file" == /* && -f "$trust_file" ]] || { echo "Public trust file must exist at an absolute path." >&2; exit 64; }
 # No release artifacts until all gates, including real C#/AOT, have passed.
@@ -30,13 +32,13 @@ python3 scripts/dependency_report.py "$package_root/dependencies.cdx.json"
 for part in client server; do
   install -Dm644 README.md "$package_root/$part/usr/share/doc/license-guard/README.md"
   install -Dm644 "$package_root/dependencies.cdx.json" "$package_root/$part/usr/share/doc/license-guard/dependencies.cdx.json"
-  tar --sort=name --owner=0 --group=0 --numeric-owner -C "$package_root/$part" -czf "artifacts/license-guard-$part-linux-x64-glibc.tar.gz" .
+  tar --sort=name --owner=0 --group=0 --numeric-owner -C "$package_root/$part" -czf "artifacts/$package_prefix-$part-linux-x64-glibc.tar.gz" .
 done
-if tar -tzf artifacts/license-guard-client-linux-x64-glibc.tar.gz | grep -E '/(license-server|license-admin|issuer.key|device.key|fixtures)(/|$)'; then
+if tar -tzf "artifacts/$package_prefix-client-linux-x64-glibc.tar.gz" | grep -E '/(license-server|license-admin|issuer.key|device.key|fixtures)(/|$)'; then
   echo "Server/private material in client package" >&2; exit 1
 fi
 if strings target/release-build/release/liblicense_guard.so | grep 'LICENSE_GUARD_DEV_'; then
   echo "Development override in release" >&2; exit 1
 fi
-(cd artifacts && sha256sum license-guard-{client,server}-linux-x64-glibc.tar.gz > SHA256SUMS)
-echo "Packages: artifacts/license-guard-{client,server}-linux-x64-glibc.tar.gz"
+(cd artifacts && sha256sum "$package_prefix-client-linux-x64-glibc.tar.gz" "$package_prefix-server-linux-x64-glibc.tar.gz" > "$package_prefix-SHA256SUMS")
+echo "Packages: artifacts/$package_prefix-{client,server}-linux-x64-glibc.tar.gz"

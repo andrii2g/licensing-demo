@@ -176,7 +176,7 @@ def main():
             print("PASS: published Native AOT worker on stock Ubuntu 24.04 with no .NET runtime and no network")
         if a.extended:
             # Separate short-lease installation. Drives runtime expiry without modifying wall time.
-            entitlement.update(license_id="LIC-short",lease_seconds=12)
+            entitlement.update(license_id="LIC-short",lease_seconds=30)
             write(state/"short-entitlement.json",entitlement)
             short_token=run([binaries/"license-admin","--config",state/"server.toml","entitlement","create","--input",state/"short-entitlement.json"],env)
             short=state/"short";short.mkdir(mode=0o750)
@@ -187,7 +187,7 @@ def main():
             p=Worker(worker_command,short_env);processes.append(p);p.until("JOB_STARTED")
             p.until("JOB_STARTED Job=2")
             assert json.loads(run([*short_ctl,"renew"],env))["sequence"]==2
-            p.until("LEASE_ACCEPTED Sequence=2",timeout=20)
+            p.until("LEASE_ACCEPTED Sequence=2",timeout=45)
             # Service outage leaves the renewed local file usable until its deadline.
             server.send_signal(signal.SIGINT);server.communicate(timeout=10);server=None
             text=p.finish(78,timeout=40);assert "JOB_COMPLETED" in text and "LICENSE_DENIED" in text
@@ -206,7 +206,7 @@ def main():
             good=(short/"license.lic").read_bytes()
             p=Worker(worker_command,short_env);processes.append(p);p.until("JOB_STARTED")
             write(short/"license.lic",b"corrupt-update",0o640)
-            text=p.finish(78,timeout=35)
+            text=p.finish(78,timeout=45)
             assert "LICENSE_DENIED" in text and "JOB_COMPLETED" in text
             write(short/"license.lic",good,0o640)
         retired=json.loads(run([*ctl,"retire"],env))

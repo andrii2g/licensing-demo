@@ -10,7 +10,7 @@ for package in tomllib.loads((root/"Cargo.lock").read_text())["package"]:
         item["hashes"]=[{"alg":"SHA-256","content":package["checksum"]}]
     components.append(item)
 nugets=set()
-for lock in (root/"samples/dotnet").rglob("packages.lock.json"):
+for lock in (root/"samples/dotnet").rglob("packages*.lock.json"):
     for framework,dependencies in json.loads(lock.read_text())["dependencies"].items():
         for name,package in dependencies.items():
             if "resolved" in package:nugets.add((name,package["resolved"]))
