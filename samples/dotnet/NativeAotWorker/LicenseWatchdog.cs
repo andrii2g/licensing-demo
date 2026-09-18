@@ -1,10 +1,11 @@
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace NativeAotWorker;
 
 internal sealed class LicenseWatchdog(
     NativeLicenseChecker checker, LicenseGate gate,
-    LicenseShutdown shutdown) : BackgroundService
+    LicenseShutdown shutdown, ILogger<LicenseWatchdog> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -19,6 +20,7 @@ internal sealed class LicenseWatchdog(
                     shutdown.Fail(code);
                     return;
                 }
+                logger.LogInformation("LEASE_ACCEPTED Sequence={Sequence}", result.Sequence);
             }
         }
         catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { }

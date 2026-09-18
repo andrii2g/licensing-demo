@@ -4,6 +4,8 @@ internal sealed record SampleOptions(
     string NativeLibraryPath, string LicensePath,
     string IdentityPath, string Product, string RequiredFeature)
 {
+    public LicenseOptions ToLicenseOptions() => new(NativeLibraryPath, LicensePath, IdentityPath, Product, RequiredFeature);
+
     public static SampleOptions Read()
     {
         static string Value(string name, string fallback) =>
@@ -20,6 +22,8 @@ internal sealed record SampleOptions(
         if (!Path.IsPathFullyQualified(options.LicensePath) ||
             !Path.IsPathFullyQualified(options.IdentityPath))
             throw new InvalidOperationException("License paths must be absolute.");
+        if (string.IsNullOrWhiteSpace(options.RequiredFeature))
+            throw new InvalidOperationException("Required feature is empty.");
         return options;
     }
 

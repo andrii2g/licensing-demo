@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace NativeAotWorker;
+namespace LicenseGuard.Managed;
 
 internal sealed class ValidationRequest
 {
@@ -11,7 +11,7 @@ internal sealed class ValidationRequest
     [JsonPropertyName("required_features")] public required string[] RequiredFeatures { get; init; }
 }
 
-internal sealed class ValidationResult
+public sealed class ValidationResult
 {
     [JsonPropertyName("schema_version")] public required int SchemaVersion { get; init; }
     [JsonPropertyName("valid")] public required bool Valid { get; init; }

@@ -13,7 +13,7 @@ internal static class Program
 
         try
         {
-            checker = new NativeLicenseChecker(SampleOptions.Read());
+            checker = new NativeLicenseChecker(SampleOptions.Read().ToLicenseOptions());
             var initial = checker.Check();
             if (!gate.Accept(initial, out var code))
             {

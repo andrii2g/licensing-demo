@@ -2,7 +2,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace NativeAotWorker;
+namespace LicenseGuard.Managed;
 
 internal static unsafe partial class NativeMethods
 {
