@@ -2,10 +2,25 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum Code {
-    Valid, LicenseMissing, LicenseMalformed, UnsupportedFormat, UnknownKey,
-    InvalidSignature, ProductMismatch, FeatureMissing, InstallationMismatch,
-    NotYetValid, ClockSuspect, LicenseExpired, IdentityUnavailable,
-    MachineMismatch, CapacityExceeded, CapacityUnavailable, IoError, LeaseRollback, InternalError,
+    Valid,
+    LicenseMissing,
+    LicenseMalformed,
+    UnsupportedFormat,
+    UnknownKey,
+    InvalidSignature,
+    ProductMismatch,
+    FeatureMissing,
+    InstallationMismatch,
+    NotYetValid,
+    ClockSuspect,
+    LicenseExpired,
+    IdentityUnavailable,
+    MachineMismatch,
+    CapacityExceeded,
+    CapacityUnavailable,
+    IoError,
+    LeaseRollback,
+    InternalError,
 }
 impl std::fmt::Display for Code {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -15,4 +30,10 @@ impl std::fmt::Display for Code {
 }
 impl std::error::Error for Code {}
 pub type Result<T> = std::result::Result<T, Code>;
-pub fn require(ok: bool) -> Result<()> { if ok { Ok(()) } else { Err(Code::LicenseMalformed) } }
+pub fn require(ok: bool) -> Result<()> {
+    if ok {
+        Ok(())
+    } else {
+        Err(Code::LicenseMalformed)
+    }
+}
