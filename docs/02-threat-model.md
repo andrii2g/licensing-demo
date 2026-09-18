@@ -16,7 +16,7 @@ Revocation cannot invalidate a previously issued offline file instantly.
 Issuer Ed25519 private keys are server-side secrets in protected storage, never checked into Git, embedded in the installer, supplied to the native client, or printed.
 The server signs only after authorization and a successful transactional decision. Device Ed25519 private keys authenticate device requests, not entitlement issuance.
 Use an OS CSPRNG. Generate activation tokens from 32 random bytes, encoded base64url without padding. Store only SHA-256 of their ASCII token value; high entropy is required and human-chosen license numbers are not activation credentials.
-Rotate issuer keys by first shipping a trusted public-key bundle containing old and new kids, then signing with the new key. Remove old trust only after policy review and old-lease migration.
+Rotate issuer keys by first rebuilding and distributing clients with an embedded public trust registry containing old and new kids, then signing with the new key. Remove old trust only after policy review and old-lease migration.
 Unknown kid fails. A response cannot supply its own trusted public key. Production rejects fixture keys.
 
 ## Transport
@@ -34,6 +34,6 @@ Strict Ed25519 verification with maintained library. Enforce maximum envelope 65
 No unsigned feature, local config or environment variable can grant validity.
 
 ## Incident controls
-On suspected issuer compromise, stop issuing, rotate keys and deliver an updated trust bundle; existing offline clients cannot learn revocation magically.
+On suspected issuer compromise, stop issuing, rotate keys and deliver a release with the updated public trust registry; existing offline clients cannot learn revocation magically.
 On device key compromise, retire that installation, retain its slot until last issued expiry, and issue replacement according to policy.
-Use administrative audit events for issue, renew, retire, rebind and key rotation; sanitize identifiers in operational logs.
+The reference database records entitlement creation/revocation, activation, renewal and retirement. Record replacement approvals and issuer key rotation in the operator audit process; sanitize identifiers in operational logs.

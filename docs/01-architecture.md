@@ -1,44 +1,54 @@
-# Architecture and boundaries
+# Architecture and repository layout
 
 ## Components
-license-core owns signed envelopes, license claim types, strict decoding, crypto and pure policy evaluation. It does not read files, call a network or log identifiers.
 
-license-host reads Linux facts and computes a HostSnapshot. It separates inventory from identity, can represent missing/unknown facts, and never shells out to dmidecode, hostnamectl, ip, or lscpu.
+| Location | Responsibility |
+|---|---|
+| [license-core](../crates/license-core/src/) | Envelope/claim parsing, exact-byte signatures, issuer trust, typed results and pure policy evaluation |
+| [license-host](../crates/license-host/src/) | Direct Linux inventory, product-specific fingerprints and live host collection |
+| [license-store](../crates/license-store/src/) | Protected paths, locking, recoverable device identity, atomic license replacement and sequence history |
+| [licensectl](../crates/licensectl/src/) | Local inspection/verification and device-authenticated activation, renewal and retirement |
+| [license-server](../crates/license-server/src/) | Axum routes, bounded HTTP work, SQLite transactions, challenges, slot accounting, response caching and issuance |
+| [license-admin](../crates/license-admin/src/) | Trusted-server key generation, entitlement administration and installation support |
+| [license-ffi](../crates/license-ffi/src/) | Stable C exports and production composition of core, live host and read-only storage |
+| [LicenseGuard.Managed](../samples/dotnet/LicenseGuard.Managed/) | Source-generated P/Invoke/JSON and typed native results |
+| [NativeAotWorker](../samples/dotnet/NativeAotWorker/) | Startup authorization, per-job admission, runtime watchdog and bounded draining |
 
-license-store owns secure local paths, locking, durable writes, installation identity and the currently installed envelope.
+The public wire schemas, OpenAPI document, result codes and C header are in [contracts/](../contracts/). The API initializes SQLite from [its deployed migration](../crates/license-server/migrations/001_initial.sql); there is one maintained migration copy.
 
-licensectl composes the above with an HTTP client. It collects inventory, authenticates activation, signs device requests, validates every response before installation and reports status.
-
-license-ffi composes the core, host and read-only store for production local checks. It exports only the C ABI. It has no network client or issuer private key.
-
-license-server implements the public activation protocol and persistent entitlement/installation state. license-admin is a separate trusted-side CLI using the same database/domain modules. The customer distribution excludes both issuer tools and issuer credentials.
-
-LicenseGuard.Managed calls the native ABI, converts results to managed typed data and owns no cryptographic policy. Sample.Worker demonstrates lifecycle behavior without coupling the library to Kafka, Redis or a particular product.
+[examples/](../examples/) contains configuration and synthetic protocol examples. [deploy/](../deploy/) contains direct Linux service/permission guidance. [scripts/](../scripts/) contains runnable local checks, demos and release packaging. Test locations and commands are listed in [the validation guide](09-testing.md).
 
 ## Data flow
-Admin creates entitlement and high-entropy activation token on trusted server.
-Installer creates device identity -> requests challenge -> sends signed activation plus inventory.
-Server approves and signs a lease -> installer verifies and atomically stores it.
-Worker loads native checker -> checker verifies current file and live identity -> worker starts.
-A timer renews; workers re-read authorization. Network availability does not affect still-valid local authorization.
 
-## Trusted versus untrusted
-Trusted issuer keys live only on the server. Trusted verifier public keys are embedded at build time or in a root-owned release trust bundle distributed with the software; the FFI request cannot override trust.
-User-supplied license files, JSON, responses, clock, inventory and paths are untrusted inputs.
-Root ownership prevents an unprivileged service from altering files; it is not protection against the machine administrator.
-The product code decides the required product and feature. A caller cannot demand fewer features through an untrusted HTTP/job field.
+1. An administrator creates an entitlement and high-entropy activation token on the trusted server.
+2. The installer durably creates a device identity, obtains a scoped challenge and sends device-signed inventory with token authorization.
+3. The server approves the request transactionally and signs a lease. The installer verifies it against its own trust and live host before atomic installation.
+4. The worker verifies the local lease through the native library before starting services. Each job admission checks the shared gate and its cached expiry deadline; the watchdog revalidates through the native library.
+5. A separate daily timer renews renewable leases. Workers revalidate local state; an outage does not invalidate a still-valid lease.
+6. Explicit retirement denies future renewal and retains the slot until the last issued authorization expires.
 
-## Core interfaces to implement
-Clock -> UTC seconds; HostProvider -> HostSnapshot; LicenseVerifier -> VerifiedClaims; PolicyEvaluator -> ValidationDecision.
-Store -> bounded read, locked identity creation, durable replacement; Issuer -> sign authorized claims; Repository -> transactional domain operations.
-These interfaces allow deterministic tests without production bypass flags.
+## Implemented interfaces and boundaries
 
-## Deployment
-One reference API process, SQLite on persistent local storage, TLS at a reverse proxy, no public administrative API. Use a dedicated server user. Admin tools need protected local access and never run on a customer machine.
-Many worker processes on one host can read the same signed license. No per-process seat counting is claimed.
-Use ordinary Linux package installation to distribute the native library and service wrapper. licensectl activates a license; it does not install arbitrary software or restart customer services without an explicit command.
+`license_core::verify` takes envelope bytes, `Trust` and a `Context` containing time, required product/features, public identity and collected host facts. It returns a `VerifiedLease` or stable `Code`; `ValidationResult` is the public diagnostic result. Policy evaluation performs no filesystem or network access.
 
-## Evolvability
-The API contract is backend-independent. A future .NET API can implement it without changing installed workers.
-PostgreSQL and concurrent multi-node API deployments require a new transaction/locking validation gate.
-TPM device keys, authenticated time, clone sessions and floating seats are later features with distinct requirements.
+`license_host::HostProvider` returns a `HostSnapshot`; `LiveHost` uses bounded Linux reads and system APIs without shell commands. Internal fixture adapters support deterministic tests. Production FFI always uses live collection.
+
+`license_store::SecureDir` implements descriptor-relative protected reads and writes. Device identity uses a recoverable private journal. Lease installation verifies before replacement and preserves a persistent sequence/digest high-water record.
+
+The API runs bounded blocking database work outside Tokio executor threads and uses SQLite `BEGIN IMMEDIATE` for mutations. Its in-process `Issuer` alone holds the server signing key. The C ABI has no network client or issuer private key; unsafe pointer handling is isolated in its exported boundary.
+
+The managed gate and drain controller use an internal `TimeProvider`. Production uses `TimeProvider.System`; tests supply controlled UTC, monotonic time and timers. Neither the production ABI nor environment configuration accepts a clock override.
+
+## Trust and deployment
+
+Issuer private keys remain on the server. Production verifier public keys are embedded at build time from the public registry selected by `LICENSE_GUARD_TRUST_FILE`. Empty trust fails closed. Only explicit dev builds accept separate development trust/inventory inputs.
+
+Signed files, HTTP data and reported inventory are untrusted until validated. Product/features come from trusted service configuration, never from job payloads. Root ownership protects against an unprivileged service, not against the host administrator.
+
+Deploy one API process with SQLite on persistent local storage, behind a TLS reverse proxy, under a dedicated server account. There is no public administrative API. Client packages exclude server/admin executables and private issuer material.
+
+Several worker processes may share one installation; activation slots do not count worker processes. The CLI manages authorization files and does not install software or restart customer services.
+
+## Extension boundaries
+
+The wire protocol can be implemented by another server backend. Multi-node databases, ARM64/musl packages, TPM keys, authenticated time and floating seats require separate implementation and validation. See [recorded validation and staging limits](09-testing.md#recorded-validation).

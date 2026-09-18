@@ -2,4 +2,4 @@
 *.py text eol=lf
 contracts/** -text
 fixtures/** -text
-reference/** -text
+crates/license-server/migrations/** -text

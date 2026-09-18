@@ -33,7 +33,7 @@ DMI product_uuid may be root-readable only. Workers remain unprivileged.
 For linux-host-v1, the deployment must provide read access to exactly the required DMI node for the licenseguard group. Verify ownership and real file target before applying a narrow read ACL. Reapply as needed on reboot using an administrator-reviewed boot-time mechanism for the target distribution; sysfs permissions/ACL support differ.
 Do not grant broad /sys access, run the worker as root, or install a setuid verifier.
 If a narrow permission grant cannot be maintained on that platform, select the server-approved linux-machine-v1 policy, or defer to a future host helper design. Packaging must test permissions after reboot as the real service user.
-The sample unit uses an optional prepared-DMI dependency only when that deployment has implemented one; it does not pretend to solve ACL provisioning generically.
+The sample unit documents the DMI prerequisite. The operator must supply the narrow permission grant and verify it after reboot; the unit does not provision it.
 
 ## Installation identity
 Generate a UUIDv4 installation_id and 32-byte Ed25519 device seed once, under an exclusive lock, before the first activation request. Persist identity durably before contacting the API.

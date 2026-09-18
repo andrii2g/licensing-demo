@@ -1,38 +1,56 @@
-# Included .NET 10 Native AOT background-service sample
+# .NET 10 integration and Native AOT
 
-Actual sample source is under samples/dotnet/NativeAotWorker/. It implements the ABI wrapper, typed source-generated JSON, gate, watchdog, bounded simulated jobs and process exit behavior. It requires the Rust ABI implementation to run successfully. This kit environment did not have dotnet or cargo; compile and runtime checks are mandatory implementation gates, not claimed completed.
+## Projects and build
 
-## Build
-Use an SDK with .NET 10 and the Linux Native AOT prerequisites for the target distribution (native compiler/linker and zlib development library).
-Run samples/dotnet/publish-linux.sh. Default RID linux-x64; publish output is artifacts/native-worker/linux-x64.
-The sample project sets PublishAot=true, InvariantGlobalization=true and uses Microsoft.Extensions.Hosting 10.0.0 as a reproducible starting version. Review/update to the current supported .NET 10 servicing version and lock packages during implementation.
-Place the correct Rust library at the configured absolute path; it remains an external native dependency, even though the worker itself is a native executable.
+[LicenseGuard.Managed](../samples/dotnet/LicenseGuard.Managed/) is the reusable wrapper. It uses source-generated `LibraryImport` and `System.Text.Json`, loads an absolute native-library path and checks ABI version 1. Configure one checker per process and reuse it; the native library resolver is process-wide for this assembly.
 
-## Startup
-Program reads trusted environment/service configuration for license path, public identity path, native library path, expected product and required feature. Example defaults match the deployment templates.
-NativeLicenseChecker loads the absolute library, checks ABI version, sends a bounded request and parses a source-generated response.
-Any invalid result, malformed native response, ABI failure or missing library exits 78 before building/starting the host. No network call is made.
-Only after a valid result is accepted into LicenseGate are hosted services started. Constructors are inert.
+[NativeAotWorker](../samples/dotnet/NativeAotWorker/) is the runnable sample. [NativeAotWorker.Tests](../samples/dotnet/NativeAotWorker.Tests/) tests its gate and drain controller with controlled time.
 
-## Runtime
-LicenseGate guards every job admission. It stores the accepted sequence/digest/identity and a monotonic deadline as well as UTC expiry. Revalidating the same lease may shorten but never extend its deadline.
-Watchdog revalidates no later than 60 seconds and schedules an earlier wake for known expiry. A new higher sequence can extend permission; lower sequence, changed same-sequence digest or changed installation fails.
-A failed runtime check closes admission, emits a structured reason and calls StopApplication. The process returns 78 after shutdown.
-Demo jobs use an independent drain cancellation token. StopAsync closes admission immediately and cancels active work after 30 seconds. Host shutdown timeout is 35 seconds. Ordinary SIGTERM exits 0, drains work and does not mark license failure.
-The demo prints authorization readiness transitions. It has no HTTP server or health endpoint; production adapters should connect the same gate to readiness.
+The repository pins .NET SDK 10.0.401 and Microsoft.Extensions.Hosting 10.0.12. Normal and AOT dependency graphs have separate lockfiles selected by `samples/dotnet/Directory.Build.targets`. Linux Native AOT requires the compiler/linker and zlib development prerequisites in the [README](../README.md).
 
-## Production adapters
-Wrap dequeue/admission in a gate lease. Do not acknowledge an unprocessed message when authorization closes. For Kafka, pause/stop consumption, finish admitted messages where possible and commit only completed work according to the existing delivery model. No Kafka package is required by the sample.
-Check all required features per host capability. Do not inspect license JSON directly elsewhere or introduce a global bool without deadline checks.
-The core check uses live CPU facts, including hotplug changes. Inventory and binding are not collected independently in C#.
+Run from the repository root on Ubuntu/WSL:
 
-## Required tests
-- No accepted-job log/counter on missing/expired/wrong-product/bad-signature startup.
-- Valid published native worker logs JOB_STARTED.
-- Actual native checker receives exact UTF-8 request and returns denial even when ABI return is zero.
-- Replace file with a higher-sequence lease; process stays running and deadline advances.
-- Same lease with backward wall clock does not extend its monotonic lifetime (unit fake clock).
-- Invalid replacement closes admission; current job drains; exit 78.
-- SIGTERM while valid drains; exit 0.
-- Missing .so, wrong architecture, bad ABI, truncated response all fail closed.
-- Published worker starts on a supported Linux machine without any .NET runtime installed.
+```bash
+dotnet run --project samples/dotnet/NativeAotWorker.Tests -c Release -r linux-x64 -p:PublishAot=false -p:RestoreLockedMode=true
+bash scripts/demo-local.sh --extended
+bash scripts/test-aot.sh
+bash scripts/test-runtime-image.sh
+```
+
+The AOT test builds the matching dev Rust library, publishes the worker and exercises actual processes. The runtime-image test uses those built artifacts on stock Ubuntu without .NET or network. To publish only the managed worker, run `bash samples/dotnet/publish-linux.sh linux-x64`; output goes to `artifacts/native-worker/linux-x64/`.
+
+Only linux-x64 on the documented Ubuntu/glibc baseline is validated. An AOT executable still needs the external Rust `.so` and native OS libraries.
+
+## Trusted configuration
+
+| Environment variable | Default |
+|---|---|
+| LICENSE_NATIVE_PATH | /usr/lib/license-guard/liblicense_guard.so |
+| LICENSE_FILE | /var/lib/license-guard/license.lic |
+| LICENSE_IDENTITY_FILE | /var/lib/license-guard/installation.json |
+| LICENSE_PRODUCT | worker-suite |
+| LICENSE_FEATURE | messaging |
+
+These values are service configuration; they do not provide trust keys, host facts, a clock or a validity override. The sample requires a nonempty feature. Additional features can be requested through the native ABI by an application-specific adapter.
+
+## Startup and runtime
+
+`Program.Main` constructs the checker and validates before building or starting the host. Missing or wrong-architecture libraries, ABI mismatch, malformed native responses and licensing denials exit 78 before any job starts. Native return 0 only indicates a complete response; the wrapper also requires a valid typed result.
+
+`LicenseGate` checks each admission against UTC expiry and a monotonic deadline. Revalidating the same sequence may shorten but never extend its lifetime. A higher sequence can renew authorization; lower sequences, a changed same-sequence digest or a changed installation close the gate.
+
+`LicenseWatchdog` schedules the next check within 60 seconds or sooner at the accepted expiry. Failed validation closes admission, logs readiness false and stops the host with exit 78. Invalid runtime state is terminal for that process.
+
+Admitted jobs use an independent drain token. `StopAsync` closes admission and gives active work up to 30 seconds; the host timeout is 35 seconds. Ordinary SIGTERM drains and returns 0. The drain timer is synchronized with disposal so an already queued callback cannot use a disposed cancellation source.
+
+The sample logs readiness transitions but exposes no HTTP health endpoint. Production services should connect gate state to their own readiness checks.
+
+## Adapting a service
+
+Keep constructors and dependency registration free of work. Validate before `Host.StartAsync/RunAsync`, then put every dequeue/admission behind the gate. On closure, stop consumption and acknowledge only completed work according to the service's delivery model.
+
+For Kafka or another queue, pause new consumption, drain already admitted messages within the deadline and retain existing retry/commit semantics. The sample deliberately has no queue-client dependency. C# does not separately collect binding facts or interpret signed license claims.
+
+## Verification
+
+The [validation guide](09-testing.md) maps deterministic tests, actual C ABI calls, normal managed processes, AOT processes and clean-image/package checks. It also records executed results and remaining real-host staging checks.

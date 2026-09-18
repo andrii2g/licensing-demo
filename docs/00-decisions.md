@@ -3,10 +3,11 @@
 ## Confirmed requirements
 Rust implements the license installer and checker. Existing C# services run on Linux. Activation is online and sends installation details to a central server, including MAC addresses, hostname and CPU counts. Deployments include physical hardware and VMware. A failed license check prevents .NET workers from starting.
 
-## Defaults selected for this kit
+## Selected defaults
 | Decision | Default | Reason |
 |---|---|---|
-| Project/repo | license-guard | Product-independent reusable component |
+| Product | License Guard | Product-independent reusable component |
+| Repository | andrii2g/licensing-demo | Public reference implementation |
 | Reference backend | Rust + Axum + SQLite | Local runnable demo; shared protocol types |
 | Managed sample | .NET 10 | Modern source-generated interop and AOT test |
 | License scope | One installation per activated host | Several worker processes may share one license |
@@ -46,3 +47,5 @@ Before changing signed claims or fingerprint normalization, create a new version
 - Dedicated server-account storage is accepted only by server/admin APIs. Production client/FFI store reads still require root ownership.
 - A protected identity journal makes first identity publication recoverable. High-water metadata remains after local removal; a new verified lease can repair an older installed file without lowering the high-water mark.
 - Managed wrapper is a reusable LicenseGuard.Managed project; sample lifecycle uses an internal TimeProvider for deterministic tests.
+- GitHub Actions workflows are omitted at the user's request. Validation remains local through scripts/check.sh and the existing demo, AOT and release scripts.
+- Repository maintenance uses one deployed SQLite migration and a required asset-integrity manifest for byte-exact contracts and cryptographic fixtures. Source layout and validation commands live in the architecture and testing guides.

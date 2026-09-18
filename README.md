@@ -32,7 +32,7 @@ python3 scripts/test-clean-checkout.py # source-only local Git clone/demo
 bash scripts/test-packaging.sh        # full gates + DEV-TRUST-TEST archive smoke
 ```
 
-Unit tests use fixed clocks and fixtures. Process tests use bounded waits for observed events. See [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) for actual evidence and staging limitations; [VALIDATION.md](VALIDATION.md) is the original kit report.
+Validation runs locally through `scripts/check.sh`; GitHub Actions workflows are intentionally omitted. Unit tests use fixed clocks and fixtures. Process tests use bounded waits for observed events. See the [testing guide](docs/09-testing.md) for commands, recorded results and deployment staging limitations.
 
 ## Components and commands
 
@@ -44,7 +44,7 @@ Unit tests use fixed clocks and fixtures. Process tests use bounded waits for ob
 | `licensectl` | `inspect`, `activate`, `renew`, `status`, `verify`, explicit `retire`, local `remove` |
 | `license-server` | Scoped challenges, device proof, authenticated exact retries, SQLite transactions, slot reservations, signed leases, bounded HTTP/rate/concurrency handling |
 | `license-admin` | Server-only key generation, entitlement create/revoke, installation retire/list |
-| `liblicense_guard.so` | `lg_abi_version`, `lg_validate_v1` from [the supplied C header](contracts/license_guard.h) |
+| `liblicense_guard.so` | `lg_abi_version`, `lg_validate_v1` from [the C ABI contract](contracts/license_guard.h) |
 | `LicenseGuard.Managed` | Reusable .NET 10 source-generated P/Invoke and JSON wrapper |
 | `NativeAotWorker` | Startup gate, per-job admission, monotonic deadline, watchdog, readiness logs, bounded drain |
 
@@ -109,3 +109,10 @@ Review [deploy/README.md](deploy/README.md) and [Linux identity requirements](do
 The Native AOT worker requires no .NET runtime. On the tested image its native dependencies are glibc/libm; the Rust library also needs libgcc_s. Physical-host/VMware behavior, reboot persistence, real TLS/reverse-proxy deployment and real systemd installation remain operator staging checks. ARM64, musl, other glibc baselines, Kubernetes binding, and multi-node databases are not validated targets.
 
 Root administrators can replace code and identifiers. Exact VM snapshots can copy an installation and device key. Offline authorization relies on local UTC; a monotonic deadline helps within a running process but does not prevent restart/snapshot rollback. Inventory is self-reported, not hardware attestation, and already-issued offline leases cannot be revoked instantly.
+
+## Documentation
+
+- [Architecture and source layout](docs/01-architecture.md) and [decisions and scope](docs/00-decisions.md).
+- [Security model](docs/02-threat-model.md), [Linux identity](docs/03-machine-identity.md), [signed envelope](docs/04-license-format.md), and [HTTP protocol](docs/05-api-protocol.md).
+- [CLI and storage](docs/06-cli-and-storage.md), [C ABI](docs/07-native-abi.md), and [.NET integration](docs/08-dotnet-native-aot.md).
+- [Testing](docs/09-testing.md), [operations](docs/10-operations.md), and [deployment examples](deploy/README.md).

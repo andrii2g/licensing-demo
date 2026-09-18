@@ -14,4 +14,4 @@ bash scripts/test-runtime-image.sh
 
 The worker is configured through trusted service environment values: LICENSE_NATIVE_PATH, LICENSE_FILE, LICENSE_IDENTITY_FILE, LICENSE_PRODUCT and LICENSE_FEATURE. These values do not supply a clock, inventory, keys or validity override. The dev native artifact alone accepts separate development test inputs.
 
-The only validated publish RID is linux-x64. An AOT executable still requires the matching external Rust .so and native OS libraries. See the root README and IMPLEMENTATION_STATUS.md for prerequisites, commands and actual evidence.
+The only validated publish RID is linux-x64. An AOT executable still requires the matching external Rust .so and native OS libraries. Run these commands from the repository root. See the [README](../../README.md), [integration guide](../../docs/08-dotnet-native-aot.md), and [testing guide](../../docs/09-testing.md) for prerequisites, commands and actual evidence.

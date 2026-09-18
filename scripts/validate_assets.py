@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Standard-library consistency checks for this implementation kit.
-The small schema checker covers only the keywords used by these supplied schemas;
+"""Standard-library consistency and integrity checks for repository assets.
+The small schema checker covers only the keywords used by the repository schemas;
 it is not a general JSON Schema implementation or a production parser.
 """
 from pathlib import Path
@@ -9,6 +9,7 @@ import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACTS = ROOT / "contracts"
+MIGRATION = "crates/license-server/migrations/001_initial.sql"
 
 def strict_pairs(pairs):
     value = {}
@@ -19,7 +20,7 @@ def strict_pairs(pairs):
     return value
 
 def load_json(path):
-    return json.loads(Path(path).read_text(), object_pairs_hook=strict_pairs)
+    return json.loads(Path(path).read_text(encoding='utf-8'), object_pairs_hook=strict_pairs)
 
 def require(condition, message):
     if not condition: raise ValueError(message)
@@ -82,7 +83,24 @@ def walk_refs(value,base):
     elif isinstance(value,list):
         for item in value:walk_refs(item,base)
 
+def verify_integrity():
+    info=load_json(ROOT/"tests/asset-integrity.json")
+    require(info["format_version"]==1, "Unsupported integrity manifest")
+    protected={p.relative_to(ROOT).as_posix() for p in CONTRACTS.rglob("*") if p.is_file()}
+    protected.update(p.relative_to(ROOT).as_posix() for p in (ROOT/"fixtures").iterdir() if p.suffix in (".json", ".lic"))
+    protected.add(MIGRATION)
+    records=info["files"]
+    names={record["path"] for record in records}
+    require(len(records)==len(names), "Duplicate integrity manifest entry")
+    require(names==protected, "Integrity manifest coverage mismatch")
+    for record in records:
+        data=(ROOT/record["path"]).read_bytes()
+        require(len(data)==record["size_bytes"], "Size mismatch "+record["path"])
+        require(hashlib.sha256(data).hexdigest()==record["sha256"], "Hash mismatch "+record["path"])
+
+
 def validate():
+    verify_integrity()
     paths=[p for directory in ("contracts","fixtures","examples") for p in (ROOT/directory).rglob("*")]
     json_files=[p for p in paths if p.is_file() and p.suffix in (".json",".lic")]
     for path in json_files:load_json(path)
@@ -106,30 +124,21 @@ def validate():
     require(xml.findtext(".//TargetFramework")=="net10.0","Unexpected managed target")
     require(xml.findtext(".//PublishAot")=="true","Native AOT not enabled")
     conn=sqlite3.connect(":memory:")
-    conn.executescript((ROOT/"reference/migrations/001_initial.sql").read_text())
+    conn.executescript((ROOT/MIGRATION).read_text(encoding="utf-8"))
     require(conn.execute("PRAGMA integrity_check").fetchone()[0]=="ok","SQLite migration integrity")
     require(conn.execute("SELECT version FROM schema_migrations").fetchall()==[(1,)],"Migration missing")
     conn.close()
-    subprocess.run(["bash","-n",str(ROOT/"samples/dotnet/publish-linux.sh")],check=True)
+    for path in [ROOT/"samples/dotnet/publish-linux.sh", *sorted((ROOT/"scripts").glob("*.sh"))]:
+        subprocess.run(["bash","-n",str(path)],check=True)
     for p in (ROOT/"scripts").glob("*.py"):
-        compile(p.read_text(),str(p),"exec")
+        compile(p.read_text(encoding="utf-8"),str(p),"exec")
     with tempfile.TemporaryDirectory() as tmp:
         c=Path(tmp)/"header.c"
         c.write_text('#include "license_guard.h"\nint main(void) { return 0; }\n')
         subprocess.run(["cc","-std=c11","-Wall","-Wextra","-Werror","-fsyntax-only","-I",str(CONTRACTS),str(c)],check=True)
-    manifest=ROOT/"BUNDLE_MANIFEST.json"
-    if manifest.exists():
-        info=load_json(manifest)
-        for record in info["files"]:
-            # Implementation changes are expected; immutable wire/crypto assets are not.
-            if not record["path"].startswith(("contracts/", "fixtures/", "reference/")):
-                continue
-            data=(ROOT/record["path"]).read_bytes()
-            require(len(data)==record["size_bytes"],"Size mismatch "+record["path"])
-            require(hashlib.sha256(data).hexdigest()==record["sha256"],"Hash mismatch "+record["path"])
-    print("PASS: JSON, local schema references/examples, C header, project XML, shell syntax, SQLite migration and available manifest.")
+    print("PASS: JSON/examples, schema references, C header, project XML, shell/Python syntax, deployed SQLite migration and required asset integrity.")
     print("JSON/lease files:",len(json_files),"schemas:",len(schemas))
-    print("NOT CHECKED: Rust/.NET compilation, AOT publish, live ABI, real hosts or deployment.")
+    print("Static asset checks only; run bash scripts/check.sh for build, ABI and lifecycle gates.")
 
 if __name__=="__main__":validate()
 

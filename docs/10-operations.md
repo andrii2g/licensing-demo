@@ -1,7 +1,7 @@
 # Operations and support
 
 ## First installation
-Install release binaries and root-owned verifier trust. Create licenseguard group and productworker service user. Create directories with supplied tmpfiles rules.
+Install root-owned release binaries built with the approved public verifier trust registry embedded in the native library. Create licenseguard group and productworker service user. Create directories with supplied tmpfiles rules.
 Choose binding policy on the entitlement. If using linux-host-v1, provision narrow DMI read permission and test as productworker; otherwise explicitly approve linux-machine-v1 on the server.
 Configure product, HTTPS endpoint and state path in /etc/license-guard/client.toml. Generate the entitlement with license-admin in the trusted server environment.
 Run licensectl inspect, then licensectl activate. Verify status as the service user. Start sample/product services only after status succeeds. Enable daily renewal timer for renewable mode.
@@ -47,6 +47,6 @@ If server database is restored behind issued sequences, do not issue lower-seque
 Monitor server clock. A server clock jump can produce bad leases for all clients.
 
 ## Distribution
-Build client packages separate from server/admin packages. Declare architecture/libc minimum and system dependencies. Root-owned absolute native library path.
+Set LICENSE_GUARD_TRUST_FILE to the public registry and run bash scripts/build-release.sh to build separate client and server/admin packages. See the root [README](../README.md) for the bootstrap key-generation and build commands. Declare architecture/libc minimum and system dependencies. Root-owned absolute native library path.
 Include SBOM/dependency versions and checksums. Sign software releases using your release process independently of license signing.
 Never publish keys from a real deployment. Public fixtures are test-only and production cannot trust them.

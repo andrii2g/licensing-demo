@@ -20,7 +20,7 @@ Use catch_unwind at extern boundary with panic=unwind; no panic should be expect
 
 ## ValidationResult
 schema_version=1, valid boolean, code string, checked_at UTC seconds.
-For valid=true also include license_id, installation_id, sequence, lease_valid_until, entitlement_expires_at, features and lease_digest. For invalid=false those fields are null (features empty) to avoid treating partial claims as trusted.
+For valid=true also include license_id, installation_id, sequence, lease_valid_until, entitlement_expires_at, features and lease_digest. For valid=false those fields are null (features empty) to avoid treating partial claims as trusted.
 code uses the stable names in contracts/status-codes.json. valid=true iff code=VALID.
 lease_digest = lowercase hex SHA256(ASCII(protected)+"."+ASCII(payload)+"."+ASCII(signature)).
 Result text is diagnostic; authorization uses typed validity/code and deadlines, not a substring search.

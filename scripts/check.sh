@@ -8,7 +8,7 @@ cargo clippy --locked --workspace --all-targets -- -D warnings
 cargo test --locked --workspace
 cargo clippy --locked --workspace --all-targets --all-features -- -D warnings
 cargo test --locked --workspace --all-features
-python3 scripts/validate_kit.py
+python3 scripts/validate_assets.py
 python3 scripts/verify_fixtures.py
 dotnet run --project samples/dotnet/NativeAotWorker.Tests -c Release -r linux-x64 -p:PublishAot=false -p:RestoreLockedMode=true
 bash scripts/demo-local.sh --extended

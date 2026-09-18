@@ -1,19 +1,20 @@
 # CLI and Linux storage
 
-## Commands to implement
+## Commands
 | Command | Behavior |
 |---|---|
 | licensectl inspect --config PATH [--json] | Collect inventory; no activation and no secrets |
 | licensectl activate --config PATH [--token-stdin] | Interactive hidden prompt by default; online challenge + activation |
-| licensectl renew --config PATH | Device-key authenticated renewal; no token needed |
+| licensectl renew --config PATH [--scheduled] | Device-key authenticated renewal; valid manual_offline authorization is a no-op only with --scheduled |
 | licensectl status --config PATH [--json] | Local validation and human-readable reasons; no network |
 | licensectl verify --config PATH --file PATH [--json] | Validate a candidate, without installing |
 | licensectl retire --config PATH | Explicit online retirement; retains historical expiry information |
 | licensectl remove --config PATH | Remove local authorization after explicit local operation; does not free server slot |
-| license-admin entitlement create --input PATH | Trusted-side create; print new random token once |
-| license-admin entitlement revoke --id ID | Deny new issuance; existing leases remain valid |
-| license-admin installation retire --id ID | Trusted-side retirement for lost machines |
-| license-admin installations list --license-id ID | Support inventory/status without exposing secrets |
+| license-admin keygen --directory PATH --kid ID | Generate protected server issuer key and public trust registry; refuses existing key |
+| license-admin --config PATH entitlement create --input PATH | Trusted-side create; print new random token once |
+| license-admin --config PATH entitlement revoke --id ID | Deny new issuance; existing leases remain valid |
+| license-admin --config PATH installation retire --id ID | Trusted-side retirement for lost machines |
+| license-admin --config PATH installations list --license-id ID | Support inventory/status without exposing secrets |
 
 All mutation commands take an exclusive lock. Administrative tools are a different binary, never shipped in client packages. No activation token command-line argument. --token-stdin consumes a single bounded line and strips one terminal newline; never logs it. Production CLI uses a protected config path and HTTPS only.
 status exits 0 only if valid, 78 on policy denial, 70 internal failure, 75 retryable resource error, 64 usage/config error. activate/renew return 0 after installation; 75 on retryable network/server outage while preserving an existing license. JSON goes to stdout, sanitized progress/errors to stderr.
@@ -27,6 +28,7 @@ Paths are for the sample product only; parameterize at packaging time:
 | installation.json | root:licenseguard 0640 | Public ID and public device key |
 | license.lic | root:licenseguard 0640 | Signed current authorization |
 | device.key | root:root 0600 | Device signing seed |
+| identity.pending.json | root:root 0600 | Private recovery journal during first identity publication |
 | pending-operation.json | root:root 0600 | Signed request for exact retries, no activation token |
 | install-state.json | root:root 0600 | Highest accepted sequence/digest |
 | mutation.lock | root:root 0600 | Installer/renew lock |
@@ -38,7 +40,7 @@ The service account is in licenseguard and has no write permission here. Do not 
 Multiple products use separate directories and installation IDs in v1.
 
 ## Durable identity creation
-Create private key and public identity in a temporary root-only directory on the same filesystem, fsync files, and publish the identity as a recoverable transaction under lock. A crash between files must be detected and repaired from the private key without changing a previously published ID/key.
+Under the exclusive lock, write a private identity.pending.json journal containing the installation ID and device seed. Atomically publish device.key and installation.json with file and directory fsync, then remove the journal. Recovery completes interrupted publication only when any existing files match that journal; it never changes a previously published ID/key.
 Do not regenerate on partial state or lost server response; fail with recovery guidance where consistency cannot be proved.
 For every candidate identity ensure private key derives the public key before use.
 
@@ -52,8 +54,7 @@ Do not overwrite a valid license with an error response or delete it on DNS/HTTP
 
 ## Renewal
 Timer invocation is root or a tightly scoped dedicated updater account with state write access; sample uses root to avoid pretending workers can write their authorization.
-If renewable license has not reached renew_after policy interval, command may no-op; timer cadence remains daily.
-manual_offline: timer logs a no-op while valid; explicit renew command may obtain replacement before expiry, subject to current entitlement.
+The daily timer runs renew --scheduled. Renewable authorization performs an online renewal on every invocation. A valid, signed manual_offline authorization is a scheduled no-op; explicit renew remains an online request for replacement, subject to the current entitlement.
 Send fresh inventory and require original binding. Do not update binding baseline implicitly.
 Retry transient failures at short bounded intervals; daily scheduling is separate. Stop on permanent denial and report actionable status.
 

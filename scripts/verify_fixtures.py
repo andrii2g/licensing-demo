@@ -5,7 +5,7 @@ Test-only: does not implement production file handling, ABI, networking or trust
 import base64, copy, hashlib, hmac, json, re
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
-from validate_kit import ROOT, CONTRACTS, check_schema, load_json, require, strict_pairs
+from validate_assets import ROOT, CONTRACTS, check_schema, load_json, require, strict_pairs
 
 def b64(value):
     require(bool(re.fullmatch(r"[A-Za-z0-9_-]+",value)),"Bad base64url")
